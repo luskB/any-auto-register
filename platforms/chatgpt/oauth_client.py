@@ -6,6 +6,7 @@ import time
 import secrets
 from urllib.parse import urlparse, parse_qs
 from core.proxy_utils import build_requests_proxy_config
+from core.task_runtime import TaskInterruption
 
 try:
     from curl_cffi import requests as curl_requests
@@ -1995,7 +1996,13 @@ class OAuthClient:
                         otp_sent_at=otp_sent_at,
                         exclude_codes=tried_codes,
                     )
+                except TaskInterruption:
+                    self._set_error("任务已手动停止")
+                    return None
                 except Exception as e:
+                    if "手动停止" in str(e):
+                        self._set_error("任务已手动停止")
+                        return None
                     self._log(f"等待 OTP 异常: {e}")
                     code = None
 
